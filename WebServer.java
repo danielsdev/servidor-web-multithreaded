@@ -8,11 +8,11 @@ public final class WebServer
         int port = 6789;
 
         // Estabelecer o socket de escuta
-        ServerSocket initialSocket = new ServerSocket(port); 
+        ServerSocket listenSocket = new ServerSocket(port); 
 
         // Processar a requisição de serviço HTTP em um laço infinito
         while(true) { 
-            Socket connectionSocket = initialSocket.accept(); 
+            Socket connectionSocket = listenSocket.accept(); 
             
             // Construir um objeto para processamento da mensagem de requisição HTTP
             HttpRequest request = new HttpRequest(connectionSocket);
