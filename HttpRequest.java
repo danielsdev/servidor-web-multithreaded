@@ -53,36 +53,27 @@ public final class HttpRequest implements Runnable
         return "application/octet-stream";
     }
 
-    private void processRequest() throws Exception
+    private void handleResponse(String fileName, String address, String httpVersion, DataOutputStream os) throws Exception
     {
-        InputStream is = this.socket.getInputStream();
-        DataOutputStream os = new DataOutputStream(this.socket.getOutputStream());
-        BufferedReader br = new BufferedReader(new InputStreamReader(is));
-
-        // Extrair o nome do arquivo a linha de requisição
-        StringTokenizer tokens = new StringTokenizer(br.readLine());
-        tokens.nextToken();
-
-        String fileName = tokens.nextToken();
-        fileName = "." + fileName;
-
-        if (fileName.equals("./"))
-            fileName += "index.html";
-
-        String httpVersion = tokens.nextToken();
+        // Construir a mensagem de resposta
+        String statusLine = null;
+        String contentTypeLine = null;
+        String entityBody = null;
 
         FileInputStream fis = null;
         Boolean fileExists = true;
+
+        File path = new File(fileName);
+
+        if (path.isDirectory()) {
+            fileName += "index.html";
+        }
 
         try {
             fis = new FileInputStream(fileName);
         } catch (FileNotFoundException e) {
             fileExists = false;
         }
-
-        String statusLine = null;
-        String contentTypeLine = null;
-        String entityBody = null;
 
         if (fileExists) {
             statusLine = httpVersion + " 200" + CRLF;
@@ -109,14 +100,41 @@ public final class HttpRequest implements Runnable
         } else {
             os.writeBytes(entityBody);
         }
+    }
 
-        //String headerLine = null;
+    private String handleFileName(String name)
+    {
+        String fileName = "." + name;
 
-        // while ((headerLine = br.readLine()).length() != 0) {
-        //     System.out.println((headerLine));
-        // }
+        if (fileName.equals("./"))
+            fileName += "index.html";
 
-        //handleResponse(fileName, "", httpVersion, os);
+        return fileName;
+    }
+
+    private void processRequest() throws Exception
+    {
+        InputStream is = this.socket.getInputStream();
+        DataOutputStream os = new DataOutputStream(this.socket.getOutputStream());
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+
+        // Extrair o nome do arquivo a linha de requisição
+        StringTokenizer tokens = new StringTokenizer(br.readLine());
+        // Igonora o método da requisição (POST, GET, PUT, DELETE)
+        tokens.nextToken();
+
+        String fileName = handleFileName(tokens.nextToken());
+
+        String httpVersion = tokens.nextToken();
+
+        tokens = new StringTokenizer(br.readLine());
+
+        // Ignora "Host:"
+        tokens.nextToken();
+        // Obtem o endereço e a porta de origem
+        String address = tokens.nextToken();
+
+        handleResponse(fileName, address, httpVersion, os);
 
         os.close();
         br.close();
